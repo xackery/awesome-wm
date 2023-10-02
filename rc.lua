@@ -17,6 +17,11 @@ local hotkeys_popup = require("awful.hotkeys_popup")
 -- Enable hotkeys help widget for VIM and other apps
 -- when client with a matching name is opened:
 require("awful.hotkeys_popup.keys")
+local startup = require("startup")
+startup.load()
+
+local battery_widget = require("battery-widget")
+local sensor_widget = require("sensor")
 
 -- Load Debian menu entries
 local has_fdo, freedesktop = pcall(require, "freedesktop")
@@ -45,6 +50,7 @@ do
     end)
 end
 -- }}}
+
 
 -- {{{ Variable definitions
 -- Themes define colours, icons, font and wallpapers.
@@ -86,19 +92,7 @@ awful.layout.layouts = {
 -- }}}
 
 -- {{{ Menu
--- Create a launcher widget and a main menu
-myawesomemenu = {
-    { "hotkeys", function() hotkeys_popup.show_help(nil, awful.screen.focused()) end },
-    { "manual", terminal .. " -e man awesome" },
-    { "edit config", editor_cmd .. " " .. awesome.conffile },
-    { "restart", awesome.restart },
-    { "quit", function() awesome.quit() end },
- }
- 
- mymainmenu = awful.menu({ items = { { "awesome", myawesomemenu, beautiful.awesome_icon },
-                                     { "open terminal", terminal }
-                                   }
-                         })
+mymainmenu = require("menu")
  
 
 mylauncher = awful.widget.launcher({ image = beautiful.awesome_icon,
@@ -215,11 +209,19 @@ awful.screen.connect_for_each_screen(function(s)
         },
         s.mytasklist, -- Middle widget
         { -- Right widgets
-            layout = wibox.layout.fixed.horizontal,
-            --mykeyboardlayout,
-            wibox.widget.systray(),
             --mytextclock,
+        
+            layout = wibox.layout.fixed.horizontal,
+        --mykeyboardlayout,
+            sensor_widget,
+            wibox.widget.systray(),
+            battery_widget {
+                ac_prefix = "+",
+                battery_prefix = "",
+                widget_text = "${AC_BAT}${percent}%",
+            },
             s.mylayoutbox,
+            
         },
     }
 end)
@@ -280,13 +282,16 @@ globalkeys = gears.table.join(
         {description = "go back", group = "client"}),
 
     -- Standard program
-    awful.key({ modkey,           }, "Return", function () awful.spawn(terminal) end,
-              {description = "open a terminal", group = "launcher"}),
+    --- Mod+Enter = Terminal
+    awful.key({ modkey, }, "Return", function () awful.spawn(terminal) end, 
+        {description = "open a terminal", group = "launcher"}),
+    --- Mod+Ctrl+R = Reload Awesome
     awful.key({ modkey, "Control" }, "r", awesome.restart,
               {description = "reload awesome", group = "awesome"}),
+    --- Mod+Shift+Q = Quit Awesome
     awful.key({ modkey, "Shift"   }, "q", awesome.quit,
               {description = "quit awesome", group = "awesome"}),
-
+    --- Mod+L = 
     awful.key({ modkey,           }, "l",     function () awful.tag.incmwfact( 0.05)          end,
               {description = "increase master width factor", group = "layout"}),
     awful.key({ modkey,           }, "h",     function () awful.tag.incmwfact(-0.05)          end,
@@ -343,29 +348,32 @@ clientkeys = gears.table.join(
             c:raise()
         end,
         {description = "toggle fullscreen", group = "client"}),
-    awful.key({ modkey, "Shift"   }, "c",      function (c) c:kill()                         end,
+    -- was mod+shift+c, moved to mod+q
+    awful.key({ modkey,   }, "q",      function (c) c:kill()                         end,
               {description = "close", group = "client"}),
-    awful.key({ modkey, "Control" }, "space",  awful.client.floating.toggle                     ,
-              {description = "toggle floating", group = "client"}),
+
+    --awful.key({ modkey, "Control" }, "space",  awful.client.floating.toggle                     ,
+    --          {description = "toggle floating", group = "client"}),
     awful.key({ modkey, "Control" }, "Return", function (c) c:swap(awful.client.getmaster()) end,
               {description = "move to master", group = "client"}),
     awful.key({ modkey,           }, "o",      function (c) c:move_to_screen()               end,
               {description = "move to screen", group = "client"}),
-    awful.key({ modkey,           }, "t",      function (c) c.ontop = not c.ontop            end,
-              {description = "toggle keep on top", group = "client"}),
-    awful.key({ modkey,           }, "n",
-        function (c)
+
+    --awful.key({ modkey,           }, "t",      function (c) c.ontop = not c.ontop            end,
+    --          {description = "toggle keep on top", group = "client"}),
+    --awful.key({ modkey,           }, "n",
+    --    function (c)
             -- The client currently has the input focus, so it cannot be
             -- minimized, since minimized clients can't have the focus.
-            c.minimized = true
-        end ,
-        {description = "minimize", group = "client"}),
-    awful.key({ modkey,           }, "m",
-        function (c)
-            c.maximized = not c.maximized
-            c:raise()
-        end ,
-        {description = "(un)maximize", group = "client"}),
+    --        c.minimized = true
+    --    end ,
+     --   {description = "minimize", group = "client"}),
+    --awful.key({ modkey,           }, "m",
+    --    function (c)
+     --       c.maximized = not c.maximized
+     --       c:raise()
+     --   end ,
+     --   {description = "(un)maximize", group = "client"}),
     awful.key({ modkey, "Control" }, "m",
         function (c)
             c.maximized_vertical = not c.maximized_vertical
@@ -550,10 +558,10 @@ client.connect_signal("request::titlebars", function(c)
             layout  = wibox.layout.flex.horizontal
         },
         { -- Right
-            awful.titlebar.widget.floatingbutton (c),
+            --awful.titlebar.widget.floatingbutton (c),
             awful.titlebar.widget.maximizedbutton(c),
-            awful.titlebar.widget.stickybutton   (c),
-            awful.titlebar.widget.ontopbutton    (c),
+            --awful.titlebar.widget.stickybutton   (c),
+            --awful.titlebar.widget.ontopbutton    (c),
             awful.titlebar.widget.closebutton    (c),
             layout = wibox.layout.fixed.horizontal()
         },
