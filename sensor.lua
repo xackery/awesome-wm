@@ -44,6 +44,7 @@ local temp = wibox.widget {
     parse),
 }
 
+temp.font = "Fira Code 8"
 
 local temp_clr = wibox.widget.background()
 temp_clr:set_widget(temp)
